@@ -1,0 +1,16 @@
+# Add any directories, files, or patterns you don't want to be tracked by version control
+
+*.pyc
+*.DS_Store
+etl.cfg
+
+venv/
+menv/
+log.txt
+
+#in case anyone wants to use pycharm
+.idea/
+logs/*
+temp/*
+
+testscript.py
