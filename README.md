@@ -15,8 +15,6 @@ $ pip install -r requirements.txt
 
 NOTE: requirements.txt will install ALL requirements, individual installs per module can be found in /requirements
 
-NOTE: Because requirements.txt lists https as the address for the repos, you'll get prompted for a password. Because of the way accounts are managed you're likely using SSH keys to auth and might not know your password. To get around this you can create an "App Password" to auth. https://confluence.atlassian.com/bitbucket/app-passwords-828781300.html#Apppasswords-Createanapppassword See the directions here for setting that up: https://bitbucket.org/equinoxfitness/datacoco/src/master/
-
 You may also need to install PostgreSQL:
 ```
 brew install postgresql
