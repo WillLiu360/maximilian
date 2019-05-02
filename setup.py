@@ -15,7 +15,7 @@ def read_requirements():
 setup(
     name="rsqoop_runner",
     version=VERSION,
-    url="https://bitbucket.org/equinoxfitness/maximilian3",
+    url="https://github.com/equinoxfitness/maximilian",
     scripts=[],
     py_modules=['rsqoop_runner'],
     install_requires=read_requirements()
