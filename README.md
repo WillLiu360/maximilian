@@ -104,7 +104,7 @@ $ python -m script_runner.module -s "sample/script_runner_test.sql" -p "var1-cat
 ## Running the tests
 
 ```
-$ python -m unittest -v tests
+$ python -m unittest discover -v tests
 ```
 
 ## Contributing
