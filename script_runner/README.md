@@ -1,4 +1,4 @@
-Maximilian3 | Script Runner
+Script Runner
 ==========
 
 Redshift does not have stored procedures so we will use a simple script runner to execute our ELT and load tasks.

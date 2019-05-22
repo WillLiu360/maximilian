@@ -1,13 +1,19 @@
 # Contributing
 
-When contributing to this repository, please first discuss the change you wish to make via issue,
-email, or any other method with the owners of this repository before making a change. 
+When contributing to this repository, please first discuss the change you wish to make via issue
+or email with the owners of this repository before making a change. 
+
+## Issues
+
+First off, issues may arise when not ran inside a virtual environment.
+Therefore, make sure to follow the installation process before proceeding.
+Issues can be created [here](https://github.com/equinoxfitness/maximilian/issues/new) and please put the appropriate label.
 
 ## Pull Request Process
 
 1. Ensure any install or build dependencies are removed before the end of the layer when doing a 
    build.
-2. Follow this format in creating a pull request.
+2. Follow this markdown format in creating a pull request. 
 ```
 ### Changes
 - update test.py
@@ -16,5 +22,3 @@ email, or any other method with the owners of this repository before making a ch
 1. Run `python -m test.py`
 - [ ] Verify that **Hello World** will be printed.
 ```
-3. Update the CHANGELOG.md with details of changes to the interface, this includes new environment 
-   variables, exposed ports, useful file locations and container parameters.

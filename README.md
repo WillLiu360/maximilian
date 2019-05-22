@@ -1,9 +1,9 @@
-Maximilian
+Maximilian :robot:
 ==========
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v1.4%20adopted-ff69b4.svg)](code-of-conduct.md)
 
 Maximilian is a repository of ETLs and APIs for working with Equinox's AWS data environment.
-
-![Maximilian](docs/max.jpeg)
+This project adheres to Contributor Covenant [code of conduct](https://github.com/equinoxfitness/maximilian/blob/master/CODE_OF_CONDUCT.md).
 
 ## Getting Started
 
@@ -14,39 +14,34 @@ $ git clone https://github.com/equinoxfitness/maximilian.git
 
 ### Prerequisites
 
-You may also need to install PostgreSQL:
+You may need to install PostgreSQL:
 ```
-brew install postgresql
+$ brew install postgresql
 ```
 
 ### Installing
 
-Setup virtual environment:
-Install virtualenv
+- Setup virtual environment:
+1. Install virtualenv
 ```
 $ pip install virtualenv
 ```
-Create virtual environment named **venv**
+2. Create virtual environment named **venv**
 ```
 $ cd maximilian
 $ virtualenv --no-site-packages venv
 ```
-Activate virtual environment
+3. Activate virtual environment
 ```
 $ source venv/bin/activate
 ```
-Install any dependencies (this will install them into your virtual environment). Note: if you are installing psycopg2 on windows use this: http://www.stickpeople.com/projects/python/win-psycopg/
+4. Install any dependencies (this will install them into your virtual environment). 
+Note: if you are installing psycopg2 on windows use [this](http://www.stickpeople.com/projects/python/win-psycopg/).
 ```
 $ pip install -r requirements.txt
 ```
-Note: requirements.txt will install ALL requirements, individual installs per module can be found in /requirements
 
-## Running the tests
-
-```
-$ python -m unittest -v tests
-```
-
+## How to run
 Sample run for rsqoop runner (look into [rsqoop_runner](https://github.com/equinoxfitness/maximilian/tree/master/rsqoop_runner) folder for more details)
 ```
 $ python -m rsqoop_runner.module -sc source_connection -tc target_connection -st source_table -tt target_table
@@ -60,9 +55,11 @@ Sample run for script runner (look into [script_runner](https://github.com/equin
 $ python -m script_runner.module -s "sample/script_runner_test.sql" -p "var1-cat, var2-dog" -f '1980-12-31 07:00' -b '9999'
 ```
 
-## Deployment
+## Running the tests
 
-
+```
+$ python -m unittest -v tests
+```
 
 ## Contributing
 
