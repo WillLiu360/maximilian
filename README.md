@@ -40,6 +40,52 @@ Note: if you are installing psycopg2 on windows use [this](http://www.stickpeopl
 ```
 $ pip install -r requirements.txt
 ```
+5. Prepare the **etl.cfg** file in the root directory of the project.
+
+```
+[mssql key name]
+db_name=
+user=
+server=
+password=<encoded in base64>
+port=1433
+type=mssql
+
+i.e
+[WebDB]
+db_name=WebDatabase
+user=any_user
+server=websql
+password=YW55IHBhc3N3b3Jk
+port=1433
+type=mssql
+
+[redshift/postgres key name]
+db_name=
+user=
+host=
+port=
+password=<encoded in base64>
+type=
+
+i.e
+[cosmo]
+db_name=cosmo
+user=admin
+host=any.host.com
+port=5439
+password=YW55IHBhc3N3b3Jk
+type=postgres
+
+
+[general]
+temp_bucket = <s3 temp folder>
+temp_key = <s3 temp folder key>
+aws_access_key=
+aws_secret_key=
+env=test
+aws_region=us-east-1
+```
 
 ## How to run
 Sample run for rsqoop runner (look into [rsqoop_runner](https://github.com/equinoxfitness/maximilian/tree/master/rsqoop_runner) folder for more details)
