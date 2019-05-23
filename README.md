@@ -22,25 +22,21 @@ $ brew install postgresql
 ### Installing
 
 - Setup virtual environment:
-1. Install virtualenv
-```
-$ pip install virtualenv
-```
-2. Create virtual environment named **venv**
+1. Create virtual environment named **venv**
 ```
 $ cd maximilian
-$ virtualenv --no-site-packages venv
+$ python3 -m venv venv
 ```
-3. Activate virtual environment
+2. Activate virtual environment
 ```
 $ source venv/bin/activate
 ```
-4. Install any dependencies (this will install them into your virtual environment). 
+3. Install any dependencies (this will install them into your virtual environment). 
 Note: if you are installing psycopg2 on windows use [this](http://www.stickpeople.com/projects/python/win-psycopg/).
 ```
 $ pip install -r requirements.txt
 ```
-5. Prepare the **etl.cfg** file in the root directory of the project.
+4. Prepare the **etl.cfg** file in the root directory of the project.
 
 ```
 [mssql key name]
