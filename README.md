@@ -47,15 +47,6 @@ password=<encoded in base64>
 port=1433
 type=mssql
 
-i.e
-[WebDB]
-db_name=WebDatabase
-user=any_user
-server=websql
-password=YW55IHBhc3N3b3Jk
-port=1433
-type=mssql
-
 [redshift/postgres key name]
 db_name=
 user=
@@ -64,21 +55,38 @@ port=
 password=<encoded in base64>
 type=
 
-i.e
-[cosmo]
-db_name=cosmo
+[general]
+temp_bucket = <s3 temp folder>
+temp_key = <s3 temp folder key>
+aws_access_key=
+aws_secret_key=
+env=test
+aws_region=us-east-1
+```
+
+**Example etl.cfg**
+```
+[My_Mssql]
+db_name=My_Mssql
+user=any_user
+server=websql
+password=YW55IHBhc3N3b3Jk
+port=1433
+type=mssql
+
+[My_Redshift]
+db_name=My_Redshift
 user=admin
 host=any.host.com
 port=5439
 password=YW55IHBhc3N3b3Jk
 type=postgres
 
-
 [general]
-temp_bucket = <s3 temp folder>
-temp_key = <s3 temp folder key>
-aws_access_key=
-aws_secret_key=
+temp_bucket = my_bucket
+temp_key = my_key
+aws_access_key= AKAASDLAFJKMADEUP
+aws_secret_key= YYAKAaldjkasfMADEUP
 env=test
 aws_region=us-east-1
 ```
