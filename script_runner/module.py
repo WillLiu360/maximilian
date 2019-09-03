@@ -4,7 +4,6 @@ import argparse
 from pathlib import Path
 from cocore.config import Config
 from cocore.esLogger import Logger
-from cocore.batch import Batch
 from codb.pg_tools import PGInteraction
 
 # sys.excepthook = l.handle_exception
@@ -38,7 +37,7 @@ class ScriptRunner():
             sql = sql.replace(var, val)
         return sql
 
-    def run_script(self, script, from_date= None, to_date=None, batch_id=None, params=None, batchy_job = None):
+    def run_script(self, script, from_date= None, to_date=None, batch_id=None, params=None):
         """
         method for expanding and running sql statements
         :param script:
@@ -63,17 +62,7 @@ class ScriptRunner():
             logger.l(e)
             raise RuntimeError(e)
 
-        # first we retrive params  we will load these into dict first, any additional params specified will override
-        if batchy_job:
-            wf = batchy_job.split('.')[0]
-            try:
-                job = batchy_job.split('.')[1] if len(batchy_job.split('.')[1]) > 0 else 'global'
-            except:
-                job = 'global'
-            batchy_params = Batch(wf).get_status()
-            paramset.update(batchy_params[job])
-
-        # next we apply custom params and special metadata fields, again this will overrite batchy params if specified
+        # next we apply custom params and special metadata fields
         # convert string params to dict
         try:
             params = dict((k.strip(), v.strip()) for k, v in (item.split('-') for item in params.split(',')))
@@ -130,7 +119,6 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--from_date', help ="""from_date""", default=None)
     parser.add_argument('-t', '--to_date', help="""to_date""", default=None)
     parser.add_argument('-b', '--batch_id', help="""enter batch id """, default=None)
-    parser.add_argument('-wf', '--batchy_job', help="""fully qualified batchy job name of the format wf.job""", default=None)
     args = parser.parse_args()
 
-    ScriptRunner(args.database).run_script(args.script, args.from_date, args.to_date, args.batch_id, args.parameters, args.batchy_job)
+    ScriptRunner(args.database).run_script(args.script, args.from_date, args.to_date, args.batch_id, args.parameters)
