@@ -59,8 +59,9 @@ class ScriptRunner():
         # Check if file exists
         file = Path(f"{script_path}/{script_filename}").is_file()
         if not file:
-            logger.l("File not found, please check path")
-            return False
+            e = 'File not found, please check path'
+            logger.l(e)
+            raise RuntimeError(e)
 
         # first we retrive params  we will load these into dict first, any additional params specified will override
         if batchy_job:
