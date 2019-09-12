@@ -25,7 +25,7 @@ class MSSQLRunner():
     def expand_params(sql, params):
         """
         substitutes params in sql stagement
-        
+
         :param sql:
         :param params:
         :return: sql, expanded with params

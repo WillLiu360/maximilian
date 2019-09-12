@@ -1,13 +1,12 @@
+#!/usr/bin/env python
+
 import sys, os
-import json
 import argparse
 from pathlib import Path
+
 from cocore.config import Config
 from cocore.esLogger import Logger
 from codb.pg_tools import PGInteraction
-
-# sys.excepthook = l.handle_exception
-
 
 class ScriptRunner():
     """
@@ -27,6 +26,7 @@ class ScriptRunner():
     def expand_params(sql, params):
         """
         substitutes params in sql stagement
+
         :param sql:
         :param params:
         :return: sql, expanded with params
@@ -40,6 +40,7 @@ class ScriptRunner():
     def run_script(self, script, from_date= None, to_date=None, batch_id=None, params=None):
         """
         method for expanding and running sql statements
+
         :param script:
         :param from_date:
         :param to_date:
@@ -47,29 +48,28 @@ class ScriptRunner():
         :param params:
         :return:
         """
-
         paramset = {}
 
         # set up logger
         script_path, script_filename = os.path.split(script)
-        logger = Logger(job_name=script_filename)
-        sys.excepthook = logger.handle_exception
+        LOG = Logger(job_name=script_filename)
+        sys.excepthook = LOG.handle_exception
 
         # Check if file exists
         file = Path(f"{script_path}/{script_filename}").is_file()
         if not file:
             e = 'File not found, please check path'
-            logger.l(e)
+            LOG.l(e)
             raise RuntimeError(e)
 
         # next we apply custom params and special metadata fields
         # convert string params to dict
         try:
             params = dict((k.strip(), v.strip()) for k, v in (item.split('-') for item in params.split(',')))
-        except:
-            logger.l("issue parsing params")
+        except Exception as e:
+            LOG.l("issue parsing params: " + str(e))
 
-        if type(params) == dict:
+        if isinstance(params, dict):
             paramset.update(params)
 
         if from_date:
@@ -92,28 +92,23 @@ class ScriptRunner():
         raw_sql = open(script).read()
         sql = self.expand_params(raw_sql,paramset)
         sql_message = '\n\n--sql script start:\n' + sql + '\n--sql script end\n\n'
-        logger.l(sql_message,10)
+        LOG.l(sql_message,10)
 
         self.pg.batchOpen()
 
-        logger.l("starting script")
+        LOG.l("starting script")
         try:
             self.pg.exec_sql(sql)
             self.pg.batchCommit()
-            logger.l("batch commit")
+            LOG.l("batch commit")
         except Exception as e:
-            logger.l("execution failed with error: " + str(e))
+            LOG.l("execution failed with error: " + str(e))
             raise RuntimeError(e)
-            # os._exit(1) #this truncates logout in rundeck
-
-
 
 if __name__ == '__main__':
-    # argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--script', help="""enter a path to your script """)
-    parser.add_argument('-p', '--parameters',  # type=json.loads, default='{"none":"none"}',
-                        default='none-none',
+    parser.add_argument('-p', '--parameters', default='none-none',
                         help="""additional params to be substituted in script, example: -p param1-val1, param2-val2 """)
     parser.add_argument('-d', '--database', help="""db alias from etl.cfg, default is cosmo """, default='cosmo')
     parser.add_argument('-f', '--from_date', help ="""from_date""", default=None)
