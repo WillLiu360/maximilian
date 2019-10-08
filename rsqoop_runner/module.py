@@ -14,7 +14,6 @@ from datetime import datetime
 from dateutil import parser
 from cocore.config import Config
 from cocore.Logger import Logger
-from cocore.batch import Batch
 from codb.mssql_tools import MSSQLInteraction
 from codb.pg_tools import PGInteraction
 from cocloud.s3_interaction import S3Interaction
@@ -27,17 +26,17 @@ class rSqoop(object):
     """
     Redshift-Sqoop: quick staging of tables from MSSQL to Redshift
     """
-    def __init__(self, src_database=None, tgt_database=None, batch_wf=None):
+    def __init__(self, src_database=None, tgt_database=None, from_date=None):
         conf = Config()
 
         self.etl_date = datetime.utcnow()
-        self.batch = None
-        self.batch_wf = batch_wf
-        self.from_date = None
-        self.batch_id = -1
-
-        if batch_wf:
-            self.get_batch()
+        self.from_date = from_date
+        self.meta_fields = {
+            'etl_source_system_cd': None,
+            'etl_row_create_dts': None,
+            'etl_row_update_dts': None,
+            'etl_run_id': int(time.time())
+        }
 
         if not os.path.exists('temp/'):
             os.makedirs('temp/')
@@ -75,24 +74,41 @@ class rSqoop(object):
         self.s3_def_bucket = conf['general']['temp_bucket']
         self.s3_def_key_prefix = 'temp'
         self.s3_env = conf['general']['env']
-        # t = self.sql.fetch_sql('select getdate()')
 
-    def get_batch(self):
+    def get_fields(self, select_fields, schema):
         """
-        get batch information for incremental runs
-        :return:
-        """
-        self.batch = Batch(self.batch_wf)
-        params = self.batch.open()['global']
-        self.from_date = parser.parse(params['from_date'])
-        self.batch_id = params['batch_id']
+        Switch between custom fields provided by user or use src_table fields
 
-    def clone_staging_table(self, src_table, tgt_table, incremental=False):
+        :param select_fields: list of tuple [(<salesforce_field>, <override_field>), (<salesforce_field>)]
+        :param schema:
         """
-        clones src table schema to redshift
-        :param src_table:
-        :param tgt_table:
-        :return:
+        if select_fields:
+            fields = []
+            for field in schema:
+                selected_field = self.get_field_values(select_fields, str(field[0]).lower())
+                if not selected_field:
+                    continue
+                if isinstance(selected_field[0], tuple):
+                    tup = (selected_field[0][1], field[1], field[2], field[3], field[4])
+                else:
+                    tup = (selected_field[0], field[1], field[2], field[3], field[4])
+                fields.append(tup)
+        else:
+            fields = [(field[0], field[1], field[2], field[3], field[4]) for field in schema]
+        return fields
+
+    def get_field_values(self, iterables, key_to_find):
+        """
+        :param iterables: list of tuples
+        :param key_to_find: str
+        :return: list of tuple
+        """
+        return [ i for i in iterables if i == key_to_find or str(i[0]).lower() == str(key_to_find).lower() ]
+
+    def get_source_table_schema(self, src_table):
+        """
+        :param src_table: str
+        :return: list
         """
         schema_name = 'public'
 
@@ -101,19 +117,8 @@ class rSqoop(object):
         else:
             table_name = src_table
 
-        rs_date_types = ('timestamp with time zone', 'time without time zone',
-                         'datetime', 'smalldatetime', 'date')
-        rs_char_types = ('char', 'varchar', 'character', 'nchar', 'bpchar',
-                         'character varying', 'nvarchar', 'text')
-        rs_num_types = ('decimal', 'numeric')
-        rs_smallint_types = ('bit', 'tinyint', 'smallint', 'int2')
-        rs_int_types = ('int', 'integer', 'int4')
-        rs_bigint_types = ('bigint', 'int8')
-        rs_other_types = ('real', 'double precision',
-                          'boolean', 'float4', 'float8', 
-                          'float', 'date', 'timestamp', 'bool',
-                          'timestamp without time zone')
-        rs_reserved_names = ('partition',)
+        if '[' in table_name:
+            table_name = table_name[1: len(table_name) - 1]
 
         schema_sql = f"""
             select
@@ -126,7 +131,46 @@ class rSqoop(object):
             where table_name=lower('{table_name}') and table_schema=lower('{schema_name}')
             order by ordinal_position """
 
-        schema = self.sql.fetch_sql_all(schema_sql)
+        return self.sql.fetch_sql_all(schema_sql)
+
+    def get_select_fields(self, schema, select_fields):
+        """
+        :param schema:
+        :param select_fields:
+        :return: 
+        """
+        field_names = []
+        for field in schema:
+            selected_field = self.get_field_values(select_fields, str(field[0]).lower())
+            if not selected_field:
+                continue
+            field_names.append(field[0])
+        return ','.join(field_names)
+
+    def clone_staging_table(self, src_table, tgt_table, select_fields=None, incremental=False):
+        """
+        Clones src table schema to redshift
+
+        :param src_table:
+        :param tgt_table:
+        :return:
+        """
+        rs_date_types = ('timestamp with time zone', 'time without time zone',
+                         'datetime', 'smalldatetime', 'date', 'datetime2')
+        rs_char_types = ('timestamp', 'char', 'varchar', 'character', 'nchar', 'bpchar',
+                         'character varying', 'nvarchar', 'text')
+        rs_num_types = ('decimal', 'numeric')
+        rs_smallint_types = ('bit', 'tinyint', 'smallint', 'int2')
+        rs_int_types = ('int', 'integer', 'int4')
+        rs_bigint_types = ('bigint', 'int8')
+        rs_other_types = ('real', 'double precision',
+                          'boolean', 'float4', 'float8',
+                          'float', 'date', 'bool',
+                          'timestamp without time zone')
+        rs_reserved_names = ('partition',)
+
+        src_schema = self.get_source_table_schema(src_table)
+        schema = self.get_fields(select_fields, src_schema)
 
         tgt_exists = self.pg_conn.table_exists(tgt_table)
 
@@ -137,7 +181,7 @@ class rSqoop(object):
             return src_table, tgt_table
 
         if incremental and tgt_exists[0] is True:
-            LOG.l('table exits in target')
+            LOG.l('table exists in target')
             return src_table, tgt_table
 
         drop_sql = 'drop table if exists ' + tgt_table + ';\n'
@@ -157,23 +201,25 @@ class rSqoop(object):
                 data_type = 'varchar(50)'
             # character precision
             elif field[1] in rs_char_types:
-                if field[1] == "text":
+                if field[1] == "text" or field[1] == "timestamp":
                     field_type = "varchar"
                 else:
                     field_type = field[1]
 
-                if int(field[2]) > 65535:
+                if field[1] == "timestamp":
+                    size = 8
+                elif int(field[2]) > 65535:
                     size = 65535
                 elif int(field[2]) < 0:
                     size = 2000
                 else:
                     size = field[2]
-                data_type = ('%s (%s)' % (field_type, size) if field[2] is not None
+                data_type = ('%s (%s)' % (field_type, size) if field[1] == 'timestamp' or field[2] is not None
                              else 'varchar(2000)')
             elif field[1] in rs_smallint_types:
                 data_type = 'smallint'
             elif field[1] in rs_int_types:
-                data_type = 'integer'       
+                data_type = 'integer'
             elif field[1] in rs_bigint_types:
                 data_type = 'bigint'
             # numeric precision
@@ -183,6 +229,9 @@ class rSqoop(object):
             # other mapped types
             elif field[1] in rs_other_types:
                 data_type = field[1]
+            # uniqueidentifier to varchar(36)
+            elif field[1] == 'uniqueidentifier':
+                data_type = 'varchar(36)'
             # anthing else goes to varchar
             else:
                 data_type = 'varchar(2000)'
@@ -199,9 +248,7 @@ class rSqoop(object):
 
         LOG.l(drop_sql)
         LOG.l(create_sql)
-        # append grants
-        #group = Config().g('redshift', 'default_access_group')
-        #create_sql += 'grant select on %s to group %s;' % (tgt_table, group)
+
         LOG.l('droping table ' + tgt_table)
         LOG.l('creating table ' + tgt_table)
         try:
@@ -214,7 +261,6 @@ class rSqoop(object):
             self.pg_conn.batchCommit()
             pass
 
-
         return src_table, tgt_table
 
     def source_to_s3(self,
@@ -223,13 +269,13 @@ class rSqoop(object):
                      s3_bucket=None,
                      s3_key=None,
                      select_fields=None,
-                     remove_quotes=False,
                      date_fields=None,
                      delimiter='\t',
                      gzip=True,
                      source_system_cd=None):
         """
-        transfers data from source table to s3
+        Transfers data from source table to s3
+
         :param src_table:
         :param tgt_table:
         :param s3_bucket:
@@ -237,7 +283,6 @@ class rSqoop(object):
         :param date_fields:
         :param delimiter:
         :param gzip:
-        :return:
         """
 
         tgt_key = tgt_table.replace('.', '-')
@@ -257,12 +302,10 @@ class rSqoop(object):
         # for custom field selection
         select_str = '*'
         if select_fields:
-            if remove_quotes == False:
-                raise Exception("select fields requires -q (remove quote) option parameter to be true")
-            select_str = ','.join([f'{x}' for x in select_fields])
+            src_schema = self.get_source_table_schema(src_table)
+            select_str = self.get_select_fields(src_schema, select_fields)
 
         ce_sql = f"select {select_str} from {src_table} with (nolock) {filter_str}"
-
         LOG.l(ce_sql)
 
         result = self.sql.fetch_sql(sql=ce_sql, blocksize=20000)
@@ -271,13 +314,14 @@ class rSqoop(object):
             else open('temp/%s.txt' % tgt_key, mode='w', encoding='utf-8')
         LOG.l('exporting to tempfile:' + temp_file.name)
 
-        etl_date_str = self.etl_date.strftime('%Y-%m-%d %H:%M:%S')
+        self.meta_fields['etl_row_create_dts'] = self.etl_date.strftime('%Y-%m-%d %H:%M:%S')
+        self.meta_fields['etl_row_update_dts'] = self.meta_fields['etl_row_create_dts']
 
         # check if there is source_system_cd user input
-        etl_source_system_cd = source_system_cd if source_system_cd else ''
-        meta_values = [etl_source_system_cd, etl_date_str, etl_date_str, int(time.time())]
+        self.meta_fields['etl_source_system_cd'] = source_system_cd if source_system_cd else ''
+        meta_values = list(self.meta_fields.values())
 
-        writer = csv.writer(temp_file, delimiter=delimiter)
+        writer = csv.writer(temp_file, delimiter=delimiter, quoting=csv.QUOTE_NONE, quotechar="")
         for row in result:
             row_data = []
             for s in row:
@@ -291,7 +335,7 @@ class rSqoop(object):
         temp_file.close()
         sleep(10)
 
-        # simple quick and dirty keep alive for large tables
+        # simple quick keep alive for large tables
         self.pg_conn.conn()
         self.pg_conn.batchOpen()
         self.pg_conn.fetch_sql("select 1")
@@ -311,19 +355,19 @@ class rSqoop(object):
         return s3_full_path
 
     def s3_to_redshift(self,
-                       tgt_table,
-                       s3_path,
-                       incremental=False,
-                       csv_fmt=False,
-                       gzip=True,
-                       manifest=False,
-                       maxerror=0,
-                       select_fields=None,
-                       key_fields=None,
-                       delimiter='\\t',
-                       remove_quotes=False):
+                        tgt_table,
+                        s3_path,
+                        incremental=False,
+                        csv_fmt=False,
+                        gzip=True,
+                        manifest=False,
+                        maxerror=0,
+                        key_fields=None,
+                        delimiter='\\t',
+                        remove_quotes=False):
         """
-        copy from s3 into redshift target table
+        Copy from s3 into redshift target table
+
         :param tgt_table:
         :param s3_path:
         :param incremental:
@@ -331,6 +375,9 @@ class rSqoop(object):
         :param gzip:
         :param manifest:
         :param maxerror:
+        :param key_fields:
+        :param delimiter:
+        :param remove_quotes:
         :return:
         """
         # check to make sure parameters make sense
@@ -346,11 +393,6 @@ class rSqoop(object):
         if remove_quotes:
             options.append('REMOVEQUOTES')
 
-        # for custom field selection
-        select_str = ''
-        if select_fields:
-            select_str = '('+','.join([f'{x}' for x in select_fields])+')'
-
         opt_str = ' '.join(options) if len(options) > 0 else ''
         upd_sql = ''
         upd_where = ''
@@ -360,16 +402,16 @@ class rSqoop(object):
 
             if csv_fmt:
                 cp_sql = """
-                COPY %(tgt_table)s %(select_str)s from '%(s3_path)s'
+                COPY %(tgt_table)s from '%(s3_path)s'
                 CREDENTIALS 'aws_access_key_id=%(aws_id)s;aws_secret_access_key=%(aws_key)s'
                 dateformat 'YYYY-MM-DD'
                 NULL AS 'None'
                 truncatecolumns
                 maxerror %(maxerror)s
-                %(options)s;\n""".format(select=select_str)
+                %(options)s;\n"""
             else:
                 cp_sql = """
-                COPY %(tgt_table)s %(select_str)s from '%(s3_path)s'
+                COPY %(tgt_table)s from '%(s3_path)s'
                 CREDENTIALS 'aws_access_key_id=%(aws_id)s;aws_secret_access_key=%(aws_key)s'
                 delimiter '%(delimiter)s'
                 dateformat 'YYYY-MM-DD'
@@ -384,7 +426,7 @@ class rSqoop(object):
 
             if csv_fmt:
                 cp_sql = """
-                COPY tmp %(select_str)s from '%(s3_path)s'
+                COPY tmp from '%(s3_path)s'
                 CREDENTIALS 'aws_access_key_id=%(aws_id)s;aws_secret_access_key=%(aws_key)s'
                 dateformat 'YYYY-MM-DD'
                 NULL AS 'None'
@@ -392,7 +434,7 @@ class rSqoop(object):
                 maxerror %(maxerror)s %(options)s;\n"""
             else:
                 cp_sql = """
-                COPY tmp %(select_str)s from '%(s3_path)s'
+                COPY tmp from '%(s3_path)s'
                 CREDENTIALS 'aws_access_key_id=%(aws_id)s;aws_secret_access_key=%(aws_key)s'
                 delimiter '%(delimiter)s'
                 dateformat 'YYYY-MM-DD'
@@ -413,17 +455,16 @@ class rSqoop(object):
 
         if csv_fmt:
             subs = {'tgt_table': tgt_table, 's3_path': s3_path, 'aws_id': self.aws_access_key,
-                    'aws_key': self.aws_secret_key, 'batch_id': self.batch_id, 'maxerror': maxerror,
-                    'options': opt_str, 'upd_where':upd_where, 'select_str': select_str}
+                    'aws_key': self.aws_secret_key, 'maxerror': maxerror,
+                    'options': opt_str, 'upd_where': upd_where }
         else:
             subs = {'tgt_table': tgt_table, 's3_path': s3_path, 'aws_id': self.aws_access_key,
-                    'aws_key': self.aws_secret_key, 'batch_id': self.batch_id, 'maxerror': maxerror,
+                    'aws_key': self.aws_secret_key, 'maxerror': maxerror,
                     'options': opt_str, 'upd_where': upd_where,
-                    'delimiter': delimiter, 'select_str': select_str}
+                    'delimiter': delimiter}
 
         sql = (pre_sql1 + cp_sql + upd_sql) % subs
 
-        # LOG.l(sql) #removing for now as we are placing keys in log :(
         LOG.l(f'starting copy to {tgt_table}')
         try:
             self.pg_conn.conn()
@@ -440,11 +481,10 @@ class rSqoop(object):
 
         self.pg_conn.batchCommit()
 
-        return self.batch_id
-
     def get_src_count(self, src_table):
         """
-        get src count, should be run at time ETL begins
+        Get src count, should be run at time ETL begins
+
         :param src_table:
         :return:
         """
@@ -455,7 +495,8 @@ class rSqoop(object):
 
     def check_tgt_count(self, src_cnt, tgt_table, pct_threshold=0.01):
         """
-        basic source to target DQ checks
+        Basic source to target data quality checks
+
         :param src_cnt:
         :param tgt_table:
         :param pct_threshold:
@@ -478,32 +519,11 @@ class rSqoop(object):
 
         return diff, pct_diff
 
-    # def keys_by_date_range(self, start_date, end_date, bucket, key_prefix):
-    #     """
-    #     allows you to query s3 by dates and return a list of keys
-    #     cool function, but not needed at the moment by rsqoop
-    #     :param start_date: yyyy-mm-dd format
-    #     :param end_date: yyyy-mm-dd format
-    #     :param bucket:
-    #     :param key_prefix:
-    #     :return: key_count, url_list
-    #     """
-    #     s3_bucket = self.s3_environment.get_bucket(bucket)
-    #     url_list = []
-    #     key_count = 0
-    #     key_list = s3_bucket.list()
-    #     for key in key_list:
-    #         start_pos = key.name.find('dt=') + 3
-    #         date_suffix = key.name[start_pos:start_pos + 10]
-    #         if key.name.startswith(key_prefix) and end_date >= date_suffix >= start_date:
-    #             url_list.append("s3://{}/{}".format(bucket, key.name))
-    #             key_count += 1
-    #     return key_count, url_list
-
     def build_rs_manifest(self, url_list, mfst_bucket=None,
                           mfst_key_prefix=None, mfst_filename=None):
         """
-        builds redshift manifest
+        Builds redshift manifest
+
         :param url_list:
         :param mfst_bucket:
         :param mfst_key_prefix:
@@ -534,7 +554,8 @@ class rSqoop(object):
 
     def grant_std_access(self, entity):
         """
-        grants standard groups to entity
+        Grants standard groups to entity
+
         :param entity:
         :return:
         """
@@ -557,7 +578,8 @@ class rSqoop(object):
                           select_fields=None,
                           source_system_cd=None):
         """
-        clones table from source, stages to s3, and then copies into redshift in one easy step
+        Clones table from source, stages to s3, and then copies into redshift
+
         :param src_table:
         :param tgt_table:
         :param incremental:
@@ -573,13 +595,12 @@ class rSqoop(object):
         LOG.l(f'\n\n--starting staging of {src_table}')
 
         # 1. clone tables (if doesn't already exist)
-        src_name, tgt_name = self.clone_staging_table(src_table, tgt_table, incremental=incremental)
+        src_name, tgt_name = self.clone_staging_table(src_table, tgt_table, select_fields, incremental=incremental)
 
         LOG.l(f'loading to {tgt_name}')
 
         if not src_name:
             LOG.l('no source found, no work to do!')
-            return self.batch_id
 
         # 2. get source count
         src_cnt = self.get_src_count(src_table)
@@ -587,27 +608,22 @@ class rSqoop(object):
         # 3. copy data to s3
         s3_path = self.source_to_s3(src_table, tgt_table,
                                     select_fields=select_fields,
-                                    remove_quotes=remove_quotes,
                                     date_fields=date_fields, delimiter=delimiter,
                                     gzip=gzip, source_system_cd=source_system_cd)
 
         # 4. copy s3 data to redshift
-        self.s3_to_redshift(tgt_table, s3_path, gzip=gzip, delimiter=delimiter,
+        self.s3_to_redshift(tgt_table=tgt_table,
+                            s3_path=s3_path,
+                            gzip=gzip,
+                            delimiter=delimiter,
                             remove_quotes=remove_quotes,
-                            select_fields=select_fields,
                             key_fields=key_fields,
                             incremental=incremental)
 
         # 5. check counts to make sure they match
         self.check_tgt_count(src_cnt, tgt_table)
 
-        # 6. close batch
-        if self.batch:
-            self.batch.close()
-
         LOG.l('--end staging of table\n\n')
-
-        return self.batch_id
 
 
 if __name__ == '__main__':
@@ -622,12 +638,11 @@ if __name__ == '__main__':
     aparser.add_argument('-sf', '--select-fields', nargs='*', help='fields needed for incremental (list)', required=False)
     aparser.add_argument('-kf', '--key-fields', nargs='*', help='fields needed for incremental (list)', required=False)
     aparser.add_argument('-df', '--date-fields', nargs='*', help='date fields for incremental (list)', required=False)
-    aparser.add_argument('-wf', '--work-flow', help='batchy workflow name', required=False)
+    aparser.add_argument('-f', '--from-date', type=parser.parse, help='from date for incremental', required=False)
     aparser.add_argument('-ss', '--source-system', help='source system cd', required=False)
     args = aparser.parse_args()
 
-    # LOG.l(f'Using source conn: {args.source_conn} and target conn: {args.target_conn}')
-    r = rSqoop(args.source_conn, args.target_conn, args.work_flow)
+    r = rSqoop(args.source_conn, args.target_conn, args.from_date)
 
     for i in range(len(args.source_tables)):
         source_table = args.source_tables[i]

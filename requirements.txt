@@ -1,6 +1,6 @@
 simplejson==3.14.0
 slackclient==1.3.0
 python-dateutil==2.8.0
--r cocore/requirements.txt
--r cocloud/requirements.txt
--r codb/requirements.txt
+cocore==1.2
+cocloud==0.2
+codb==1.0
