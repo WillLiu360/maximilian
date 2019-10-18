@@ -5,7 +5,7 @@ import argparse
 from pathlib import Path
 
 from cocore.config import Config
-from cocore.esLogger import Logger
+from cocore.Logger import Logger
 from codb.pg_tools import PGInteraction
 
 class ScriptRunner():
@@ -13,14 +13,21 @@ class ScriptRunner():
     generic class for execution of a parameterized script in postgres or redshift
     """
     def __init__(self, database):
+        self.database = database
+        self.pg = None
+
+    def init(self):
         conf = Config()
-        pg_db_name = conf[database]['db_name']
-        pg_user = conf[database]['user']
-        pg_host = conf[database]['host']
-        pg_password = conf[database]['password']
-        pg_port = conf[database]['port']
-        self.pg = PGInteraction(dbname=pg_db_name,host=pg_host,user=pg_user,password=pg_password,port=pg_port,schema='public')
+        pg_db_name = conf[self.database]['db_name']
+        pg_user = conf[self.database]['user']
+        pg_host = conf[self.database]['host']
+        pg_password = conf[self.database]['password']
+        pg_port = conf[self.database]['port']
+        self.pg = PGInteraction(dbname=pg_db_name, host=pg_host, user=pg_user, password=pg_password, port=pg_port,
+                                schema='public')
         self.pg.conn()
+
+        return self
 
     @staticmethod
     def expand_params(sql, params):
@@ -116,4 +123,4 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--batch_id', help="""enter batch id """, default=None)
     args = parser.parse_args()
 
-    ScriptRunner(args.database).run_script(args.script, args.from_date, args.to_date, args.batch_id, args.parameters)
+    ScriptRunner(args.database).init().run_script(args.script, args.from_date, args.to_date, args.batch_id, args.parameters)

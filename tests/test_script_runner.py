@@ -14,6 +14,7 @@ class TestMain(unittest.TestCase):
         Test parameter substitution function
         :return:
         """
+        self.main.pg = MagicMock()
         try:
             sql = "SELECT field1, field2 FROM test WHERE field1 = '$[?var1]' AND field2 = '$[?var2]'"
             params = {

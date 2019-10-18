@@ -5,7 +5,7 @@ import argparse
 from datetime import datetime
 
 from cocore.config import Config
-from cocore.esLogger import Logger
+from cocore.Logger import Logger
 from codb.mssql_tools import MSSQLInteraction
 
 class MSSQLRunner():
@@ -13,13 +13,19 @@ class MSSQLRunner():
     generic class for execution of a parameterized script in postgres or redshift
     """
     def __init__(self, database):
+        self.database = database
+        self.ms = None
+
+    def init(self):
         conf = Config()
-        ms_db_name = conf[database]['db_name']
-        ms_user = conf[database]['user']
-        ms_server = conf[database]['server']
-        ms_password = conf[database]['password']
+        ms_db_name = conf[self.database]['db_name']
+        ms_user = conf[self.database]['user']
+        ms_server = conf[self.database]['server']
+        ms_password = conf[self.database]['password']
         self.ms = MSSQLInteraction(dbname=ms_db_name, host=ms_server, user=ms_user, password=ms_password)
         self.ms.conn()
+
+        return self
 
     @staticmethod
     def expand_params(sql, params):
@@ -126,4 +132,4 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--sql_command', help="""actual sql command to be executed""", default=None)
     args = parser.parse_args()
 
-    MSSQLRunner(args.database).run_script(args.script, args.from_date, args.to_date, args.batch_id, args.parameters, args.sql_command)
+    MSSQLRunner(args.database).init().run_script(args.script, args.from_date, args.to_date, args.batch_id, args.parameters, args.sql_command)
