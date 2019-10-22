@@ -274,7 +274,6 @@ class rSqoop(object):
             LOG.l(f'Unable to create table with sql: {create_sql}')
             LOG.l(f'Warning msg: {e}')
             self.pg_conn.batchCommit()
-            pass
 
         return src_table, tgt_table
 

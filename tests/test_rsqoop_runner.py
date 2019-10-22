@@ -1,6 +1,5 @@
-from unittest.mock import patch, MagicMock
-import unittest, sys, json
-from unittest.mock import patch
+from unittest.mock import MagicMock
+import unittest
 
 from rsqoop_runner.module import rSqoop
 
@@ -8,6 +7,8 @@ from rsqoop_runner.module import rSqoop
  You can use this test as reference on how to start using rSqoop in your code.
  truncate and load from mssql to postgres/redshift
 """
+
+
 class TestMain(unittest.TestCase):
 
     def setUp(self):

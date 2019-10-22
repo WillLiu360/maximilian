@@ -1,7 +1,4 @@
-import unittest, sys, json
-from unittest.mock import patch, MagicMock
-from datetime import datetime
-
+import unittest
 from mssql_runner.module import MSSQLRunner
 
 class TestMain(unittest.TestCase):

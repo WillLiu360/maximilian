@@ -1,6 +1,5 @@
-import unittest, sys, json
-from unittest.mock import patch, MagicMock
-from datetime import datetime
+import unittest
+from unittest.mock import MagicMock
 
 from script_runner.module import ScriptRunner
 
