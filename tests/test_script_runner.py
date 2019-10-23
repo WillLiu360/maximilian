@@ -36,10 +36,7 @@ class TestMain(unittest.TestCase):
 
     def test_expand_params_error(self):
         self.main = ScriptRunner('cosmo')
-        """
-        Test parameter substitution function
-        :return:
-        """
+
         try:
             sql = "SELECT field1, field2 FROM test WHERE field1 = '$[?var1]' AND field2 = '$[?var2]'"
             params = {
@@ -71,6 +68,7 @@ class TestMain(unittest.TestCase):
                 batch_id=1,
                 params="none-none",
             )
+
 
 if __name__ == '__main__':
     unittest.main()
