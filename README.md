@@ -5,24 +5,21 @@ Maximilian :robot:
 Maximilian is a repository of ETLs and APIs for working with Equinox's AWS data environment.
 This project adheres to Contributor Covenant [code of conduct](https://github.com/equinoxfitness/maximilian/blob/master/CODE_OF_CONDUCT.md).
 
-Getting Started
-=====
+## Getting Started
 
 Clone repository
 ```
 git clone https://github.com/equinoxfitness/maximilian.git
 ```
 
-Prerequisites
-=====
+## Prerequisites
 
 You may need to install PostgreSQL:
 ```
 brew install postgresql
 ```
 
-Installing
-=====
+## Installing
 
 - Setup virtual environment:
 1.  Create virtual environment named **venv**
@@ -94,8 +91,7 @@ env=test
 aws_region=us-east-1
 ```
 
-How to run
-====
+## How to run
 
 Sample run for rsqoop runner (look into [rsqoop_runner](https://github.com/equinoxfitness/maximilian/tree/master/rsqoop_runner) folder for more details)
 ```
@@ -110,24 +106,20 @@ Sample run for script runner (look into [script_runner](https://github.com/equin
 python -m script_runner.module -s "sample/script_runner_test.sql" -p "var1-cat, var2-dog" -f '1980-12-31 07:00' -b '9999'
 ```
 
-Running the tests
-=====
+## Running the tests
 
 ```sh
 python -m unittest discover -v tests
 ```
 
-Contributing
-=====
+## Contributing
 
 Please read [CONTRIBUTING.md](https://github.com/equinoxfitness/maximilian/blob/master/CONTRIBUTING.md) for details on regarding issues and the process for submitting pull requests to us.
 
-Versioning
-=====
+## Versioning
 
 We use [Jenkins](https://jenkins.io/) for versioning. For the versions available, see the [tags on this repository](https://github.com/equinoxfitness/maximilian/tags).
 
-Contributors
-=====
+## Contributors
 
 See the list of [contributors](https://github.com/equinoxfitness/maximilian/contributors) who participated in this project.
