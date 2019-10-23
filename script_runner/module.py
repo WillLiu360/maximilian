@@ -15,6 +15,7 @@ class ScriptRunner():
     def __init__(self, database):
         self.database = database
         self.pg = None
+        self.logger = Logger('ScriptRunner')
 
     def init(self):
         conf = Config()
@@ -57,24 +58,12 @@ class ScriptRunner():
         """
         paramset = {}
 
-        # set up logger
-        script_path, script_filename = os.path.split(script)
-        LOG = Logger(job_name=script_filename)
-        sys.excepthook = LOG.handle_exception
-
-        # Check if file exists
-        file = Path(f"{script_path}/{script_filename}").is_file()
-        if not file:
-            e = 'File not found, please check path'
-            LOG.l(e)
-            raise RuntimeError(e)
-
         # next we apply custom params and special metadata fields
         # convert string params to dict
         try:
             params = dict((k.strip(), v.strip()) for k, v in (item.split('-') for item in params.split(',')))
         except Exception as e:
-            LOG.l("issue parsing params: " + str(e))
+            self.logger .l("issue parsing params: " + str(e))
 
         if isinstance(params, dict):
             paramset.update(params)
@@ -99,17 +88,17 @@ class ScriptRunner():
         raw_sql = open(script).read()
         sql = self.expand_params(raw_sql,paramset)
         sql_message = '\n\n--sql script start:\n' + sql + '\n--sql script end\n\n'
-        LOG.l(sql_message,10)
+        self.logger.l(sql_message, 10)
 
         self.pg.batchOpen()
 
-        LOG.l("starting script")
+        self.logger.l("starting script")
         try:
             self.pg.exec_sql(sql)
             self.pg.batchCommit()
-            LOG.l("batch commit")
+            self.logger.l("batch commit")
         except Exception as e:
-            LOG.l("execution failed with error: " + str(e))
+            self.logger.l("execution failed with error: " + str(e))
             raise RuntimeError(e)
 
 if __name__ == '__main__':
