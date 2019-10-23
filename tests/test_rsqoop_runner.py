@@ -42,6 +42,17 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(True)
 
+    def test_get_fields(self):
+        select_fields = ['userpreferencetypeid', 'preferencename']
+        schema = [('UserPreferenceTypeId', 'int', None, 10, 0), ('PreferenceName', 'varchar', 100, None, None),
+         ('PreferenceValueDataType', 'varchar', 50, None, None), ('UserPreferenceCategoryId', 'int', None, 10, 0),
+         ('IsMaintainHistory', 'bit', None, None, None), ('CreatedOn', 'datetime', None, None, None),
+         ('ModifiedOn', 'datetime', None, None, None), ('CreatedBy', 'varchar', 50, None, None),
+         ('ModifiedBy', 'varchar', 50, None, None), ('IsActive', 'bit', None, None, None)]
+        fields = self.main.get_fields(select_fields, schema)
+        print('test_get_fields', fields)
+        self.assertTrue(len(fields) == 2)
+
 
 if __name__ == '__main__':
     unittest.main()
