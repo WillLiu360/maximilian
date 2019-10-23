@@ -9,34 +9,36 @@ This project adheres to Contributor Covenant [code of conduct](https://github.co
 
 Clone repository
 ```
-$ git clone https://github.com/equinoxfitness/maximilian.git
+git clone https://github.com/equinoxfitness/maximilian.git
 ```
 
-### Prerequisites
+Prerequisites
+-------------
 
 You may need to install PostgreSQL:
 ```
-$ brew install postgresql
+brew install postgresql
 ```
 
-### Installing
+Installing
+----------
 
 - Setup virtual environment:
-1. Create virtual environment named **venv**
+1.  Create virtual environment named **venv**
 ```
-$ cd maximilian
-$ python3 -m venv venv
+cd maximilian
+python3 -m venv venv
 ```
-2. Activate virtual environment
+2.  Activate virtual environment
 ```
-$ source venv/bin/activate
+source venv/bin/activate
 ```
-3. Install any dependencies (this will install them into your virtual environment). 
+3.  Install any dependencies (this will install them into your virtual environment).
 Note: if you are installing psycopg2 on windows use [this](http://www.stickpeople.com/projects/python/win-psycopg/).
 ```
-$ pip install -r requirements.txt
+pip install -r requirements.txt
 ```
-4. Prepare the **etl.cfg** file in the root directory of the project.
+4.  Prepare the **etl.cfg** file in the root directory of the project.
 
 ```
 [mssql key name]
@@ -92,23 +94,24 @@ aws_region=us-east-1
 ```
 
 ## How to run
+
 Sample run for rsqoop runner (look into [rsqoop_runner](https://github.com/equinoxfitness/maximilian/tree/master/rsqoop_runner) folder for more details)
 ```
-$ python -m rsqoop_runner.module -sc source_connection -tc target_connection -st source_table -tt target_table
+python -m rsqoop_runner.module -sc source_connection -tc target_connection -st source_table -tt target_table
 ```
 Sample run for mssql runner (look into [mssql_runner](https://github.com/equinoxfitness/maximilian/tree/master/mssql_runner) folder for more details)
 ```
-$ python -m mssql_runner.module -s "sample/mssql_runner_test.sql" -p "var1-cat, var2-dog" -b '9999'
+python -m mssql_runner.module -s "sample/mssql_runner_test.sql" -p "var1-cat, var2-dog" -b '9999'
 ```
 Sample run for script runner (look into [script_runner](https://github.com/equinoxfitness/maximilian/tree/master/script_runner) folder for more details)
 ```
-$ python -m script_runner.module -s "sample/script_runner_test.sql" -p "var1-cat, var2-dog" -f '1980-12-31 07:00' -b '9999'
+python -m script_runner.module -s "sample/script_runner_test.sql" -p "var1-cat, var2-dog" -f '1980-12-31 07:00' -b '9999'
 ```
 
 ## Running the tests
 
-```
-$ python -m unittest discover -v tests
+```sh
+python -m unittest discover -v tests
 ```
 
 ## Contributing
@@ -117,7 +120,7 @@ Please read [CONTRIBUTING.md](https://github.com/equinoxfitness/maximilian/blob/
 
 ## Versioning
 
-We use [Jenkins](https://jenkins.io/) for versioning. For the versions available, see the [tags on this repository](https://github.com/equinoxfitness/maximilian/tags). 
+We use [Jenkins](https://jenkins.io/) for versioning. For the versions available, see the [tags on this repository](https://github.com/equinoxfitness/maximilian/tags).
 
 ## Contributors
 

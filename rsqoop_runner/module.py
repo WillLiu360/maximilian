@@ -18,7 +18,6 @@ from codb.mssql_tools import MSSQLInteraction
 from codb.pg_tools import PGInteraction
 from cocloud.s3_interaction import S3Interaction
 
-CONF = Config()
 LOG = Logger()
 
 
@@ -27,8 +26,8 @@ class rSqoop(object):
     Redshift-Sqoop: quick staging of tables from MSSQL to Redshift
     """
     def __init__(self, src_database=None, tgt_database=None, from_date=None):
-        conf = Config()
-
+        self.src_database = src_database
+        self.tgt_database = tgt_database
         self.etl_date = datetime.utcnow()
         self.from_date = from_date
         self.meta_fields = {
@@ -37,43 +36,59 @@ class rSqoop(object):
             'etl_row_update_dts': None,
             'etl_run_id': int(time.time())
         }
-
         if not os.path.exists('temp/'):
             os.makedirs('temp/')
 
-        if src_database is not None:
-            sql_db_name = conf[src_database]['db_name']
-            sql_user = conf[src_database]['user']
-            sql_host = conf[src_database]['server']
-            sql_password = conf[src_database]['password']
-            port = conf[src_database].get('port', 1433)
+        self.sql = None
+        self.pg_conn = None
+        self.aws_access_key = None
+        self.aws_secret_key = None
+
+        self.s3_environment = None
+        self.s3_def_bucket = None
+        self.s3_def_key_prefix = 'temp'
+        self.s3_env = None
+        self.conf = None
+        self.s3_conn = None
+
+    def init(self):
+        self.conf = Config()
+
+        if self.src_database is not None:
+            sql_db_name = self.conf[self.src_database]['db_name']
+            sql_user = self.conf[self.src_database]['user']
+            sql_host = self.conf[self.src_database]['server']
+            sql_password = self.conf[self.src_database]['password']
+            port = self.conf[self.src_database].get('port', 1433)
             self.sql = MSSQLInteraction(dbname=sql_db_name, host=sql_host, user=sql_user,
                                         password=sql_password, port=port)
-            LOG.l(f'Connecting to src db: {src_database}, db name: {sql_db_name}, host: {sql_host}')
+            LOG.l(f'Connecting to src db: {self.src_database}, db name: {sql_db_name}, host: {sql_host}')
 
             self.sql.conn()
             self.sql.batchOpen()
 
-        if tgt_database is not None:
-            pg_db_name = conf[tgt_database]['db_name']
-            pg_user = conf[tgt_database]['user']
-            pg_host = conf[tgt_database]['host']
-            pg_password = conf[tgt_database]['password']
-            pg_port = conf[tgt_database]['port']
+        if self.tgt_database is not None:
+            pg_db_name = self.conf[self.tgt_database]['db_name']
+            pg_user = self.conf[self.tgt_database]['user']
+            pg_host = self.conf[self.tgt_database]['host']
+            pg_password = self.conf[self.tgt_database]['password']
+            pg_port = self.conf[self.tgt_database]['port']
             self.pg_conn = PGInteraction(dbname=pg_db_name, host=pg_host, user=pg_user,
                                          password=pg_password, port=pg_port, schema='public')
-            LOG.l(f'Connecting to tgt db: {tgt_database}, db name: {pg_db_name}, host: {pg_host}')
+            LOG.l(f'Connecting to tgt db: {self.tgt_database}, db name: {pg_db_name}, host: {pg_host}')
 
             self.pg_conn.conn()
             self.pg_conn.batchOpen()
 
-        self.aws_access_key = conf['general']['aws_access_key']
-        self.aws_secret_key = conf['general']['aws_secret_key']
+        self.aws_access_key = self.conf['general']['aws_access_key']
+        self.aws_secret_key = self.conf['general']['aws_secret_key']
 
         self.s3_environment = S3Interaction(self.aws_access_key, self.aws_secret_key)
-        self.s3_def_bucket = conf['general']['temp_bucket']
-        self.s3_def_key_prefix = 'temp'
-        self.s3_env = conf['general']['env']
+        self.s3_def_bucket = self.conf['general']['temp_bucket']
+        self.s3_env = self.conf['general']['env']
+        self.s3_conn = S3Interaction(self.aws_access_key, self.aws_secret_key)
+
+        return self
 
     def get_fields(self, select_fields, schema):
         """
@@ -259,7 +274,6 @@ class rSqoop(object):
             LOG.l(f'Unable to create table with sql: {create_sql}')
             LOG.l(f'Warning msg: {e}')
             self.pg_conn.batchCommit()
-            pass
 
         return src_table, tgt_table
 
@@ -287,7 +301,7 @@ class rSqoop(object):
 
         tgt_key = tgt_table.replace('.', '-')
         if s3_bucket is None:
-            s3_bucket = CONF['general']['temp_bucket']
+            s3_bucket = self.conf['general']['temp_bucket']
         if s3_key is None:
             s3_key = str('rsqoop/' + self.s3_env + '/' +tgt_key)
 
@@ -342,8 +356,7 @@ class rSqoop(object):
         self.sql.fetch_sql("select 1")
 
         LOG.l('upload starting')
-        s3_conn = S3Interaction(self.aws_access_key, self.aws_secret_key)
-        s3_conn.put_file_to_s3(bucket=s3_bucket, key=s3_key + '/output.tsv',
+        self.s3_conn.put_file_to_s3(bucket=s3_bucket, key=s3_key + '/output.tsv',
                                local_filename=temp_file.name)
 
         s3_full_path = s3_path + '/' + 'output.tsv'
@@ -642,7 +655,7 @@ if __name__ == '__main__':
     aparser.add_argument('-ss', '--source-system', help='source system cd', required=False)
     args = aparser.parse_args()
 
-    r = rSqoop(args.source_conn, args.target_conn, args.from_date)
+    r = rSqoop(args.source_conn, args.target_conn, args.from_date).init()
 
     for i in range(len(args.source_tables)):
         source_table = args.source_tables[i]

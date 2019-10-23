@@ -7,18 +7,17 @@ Both script runner and SQLWorkbenchJ will use the same notation for variable exp
 
 There are three types of substitution parameters that can be used through script runner.  The first is a set of standard etl params for ease of use:
 
-* -f, from_date, default 1776-07-24
-* -t,to_date, default 9999-12-31
-* -b, batch_no, default is -1
+*  -f, from_date, default 1776-07-24
+*  -t,to_date, default 9999-12-31
+*  -b, batch_no, default is -1
 
 The second option is for arbitrary variable expansion.  This is passed in the following format because rundeck commands don't like json quotes:
 
-* -p, example: -p "param1-val1, param2-val2"
+*  -p, example: -p "param1-val1, param2-val2"
 
 The final option is to use the batchy integration
 
-* -wf, batchy_job, this will substitue parameters from a batchy workflow, this should be a fully qualified batchy job name of the format wf.job, if no job is specified it will assume global
-
+*  -wf, batchy_job, this will substitue parameters from a batchy workflow, this should be a fully qualified batchy job name of the format wf.job, if no job is specified it will assume global
 
 Here is a sample SQL Script.  If run in SQL workbench you will be prompted for values for var1 and var2.
 

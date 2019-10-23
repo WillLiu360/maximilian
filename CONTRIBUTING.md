@@ -11,9 +11,10 @@ Issues can be created [here](https://github.com/equinoxfitness/maximilian/issues
 
 ## Pull Request Process
 
-1. Ensure any install or build dependencies are removed before the end of the layer when doing a 
-   build.
-2. Follow this markdown format in creating a pull request. 
+1.  Ensure any install or build dependencies are removed before the end of the layer when doing a
+    build.
+
+2.  Follow this markdown format in creating a pull request.
 ```
 ### Changes
 - update test.py

@@ -1,7 +1,4 @@
-import unittest, sys, json
-from unittest.mock import patch, MagicMock
-from datetime import datetime
-
+import unittest
 from mssql_runner.module import MSSQLRunner
 
 class TestMain(unittest.TestCase):
@@ -26,6 +23,7 @@ class TestMain(unittest.TestCase):
             )
             expected_result = "SELECT field1, field2 FROM test WHERE field1 = 'result1' AND field2 = 'result2'"
             self.assertEqual(result, expected_result)
+
         except Exception as e:
             self.assertTrue(False, e)
 

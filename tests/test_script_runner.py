@@ -1,6 +1,5 @@
-import unittest, sys, json
-from unittest.mock import patch, MagicMock
-from datetime import datetime
+import unittest
+from unittest.mock import MagicMock
 
 from script_runner.module import ScriptRunner
 
@@ -14,6 +13,7 @@ class TestMain(unittest.TestCase):
         Test parameter substitution function
         :return:
         """
+        self.main.pg = MagicMock()
         try:
             sql = "SELECT field1, field2 FROM test WHERE field1 = '$[?var1]' AND field2 = '$[?var2]'"
             params = {
