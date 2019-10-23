@@ -13,7 +13,7 @@ git clone https://github.com/equinoxfitness/maximilian.git
 ```
 
 Prerequisites
-=====
+-------------
 
 You may need to install PostgreSQL:
 ```
@@ -21,7 +21,7 @@ brew install postgresql
 ```
 
 Installing
-=====
+----------
 
 - Setup virtual environment:
 1.  Create virtual environment named **venv**
