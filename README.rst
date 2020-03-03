@@ -1,6 +1,10 @@
 Maximilian 🤖
 ============
 
+.. image:: https://readthedocs.org/projects/maximilian/badge/?version=latest
+    :target: https://maximilian.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
 .. image:: https://api.codacy.com/project/badge/Grade/92ef60d1ddd840ce830a486fe5521b0e
     :target: https://www.codacy.com/manual/equinoxfitness/maximilian?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=equinoxfitness/maximilian&amp;utm_campaign=Badge_Grade
     :alt: Code Quality Grade
