@@ -61,7 +61,7 @@ Setting up
     source venv/bin/activate
 
 3.  Install any dependencies (this will install them into your virtual environment).
-Note: if you are installing psycopg2 on windows use [this](http://www.stickpeople.com/projects/python/win-psycopg/).
+Note: if you are installing psycopg2 on windows use `this <http://www.stickpeople.com/projects/python/win-psycopg/>`_.
 ::
 
     pip install -r requirements.txt
@@ -93,7 +93,6 @@ Note: if you are installing psycopg2 on windows use [this](http://www.stickpeopl
     aws_secret_key=
     env=test
     aws_region=us-east-1
-::
 
 **Example etl.cfg**
 ::
