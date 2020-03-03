@@ -2,7 +2,7 @@
 
 from setuptools import setup
 
-VERSION = "1.0"
+VERSION = "0.1.0"
 
 requires = [
     "simplejson==3.14.0",
@@ -16,9 +16,11 @@ requires = [
 setup(
     name="maximilian",
     version=VERSION,
-    author="Equinox",
+    license="MIT",
+    author="Equinox Fitness",
     url="https://github.com/equinoxfitness/maximilian",
     scripts=[],
+    long_description=open("README.rst").read(),
     install_requires=requires,
     classifiers=[
         "Development Status :: 1 - Production/Stable",
