@@ -24,9 +24,6 @@ pipeline{
 
                 echo "coverage"
 
-                // Install pyodbc library dependencies
-                sh 'apt-get update && apt-get -y install g++ unixodbc-dev'
-
                 sh "pip install -r requirements-dev.txt"
                 sh "pip install coverage codacy-coverage"
                 // sh "coverage run -m unittest discover tests"
